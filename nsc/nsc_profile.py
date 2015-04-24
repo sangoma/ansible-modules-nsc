@@ -1,5 +1,7 @@
+#!/usr/bin/python
+
 try:
-    import safepy
+    import safe
     import requests
     HAS_SAFEPY=True
 except ImportError:
@@ -8,13 +10,9 @@ except ImportError:
 
 def get_network_ip(module, api):
     obj = api.network.ip.list({'address': module.params['ip']})
-    if not obj:         
+    if not obj:
         module.fail_json(msg="Provided ip does not exist on the device")
     return obj[0]
-
-
-def get_api(module):
-    return safepy.api(module.params['host'])
 
 
 def dicts_differ(d1, d2):
@@ -36,21 +34,27 @@ def main():
     )
 
     if not HAS_SAFEPY:
-        module.fail_json(msg="safepy is not installed")
+        module.fail_json(msg="safepy2 is not installed")
 
-    with get_api(module) as api:
+    with safe.api(module.params['host']) as api:
         profile_name = module.params['name']
         profile_data = {'sip-ip': get_network_ip(module, api),
-                        'sip-port': module.params['port']}
+                        'sip-port': str(module.params['port'])}
 
         current = api.sip.profile[profile_name]
         try:
             current_status = bool(current.status())
             current_data = current.retrieve()
         except requests.HTTPError:
-            # If we get an exception its because the profile doesn't
-            # exist on the product. We're free to create it.
-            api.sip.profile.create(profile_name, profile_data)
+            if e.response.status_code != 404:
+                module.fail_json(msg="falied to query profile")
+
+            try:
+                # If we get an exception its because the profile doesn't
+                # exist on the product. We're free to create it.
+                api.sip.profile.create(profile_name, profile_data)
+            except requests.HTTPError:
+                module.fail_json(msg="falied to create profile")
         else:
             # Otherwise we have to consider if its either already
             # running or actually different to continue.
@@ -58,9 +62,12 @@ def main():
             if not differ:
                 module.exit_json(changed=False)
             elif current_status and differ:
-                module.fail_json(msg="Incompatable profile already started")
+                module.fail_json(msg="incompatable profile already started")
 
-            current.update(profile_data)
+            try:
+                current.update(profile_data)
+            except requests.HTTPError as e:
+                module.fail_json(msg="falied to update profile")
 
     module.exit_json(changed=True)
 
