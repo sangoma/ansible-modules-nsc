@@ -15,12 +15,11 @@ Then a task like this should work inside your ansible script:
 ~~~yaml
 ---
 - name: Demo sip profile
-  nsc_profile:
-    host: "{{ inventory_hostname }}"
-    name: sample-sip-profile
-    ip: "{{ ansible_all_ipv4_addresses[0] }}"
-    port: 5060
-  delegate_to: 127.0.0.1
+  local_action: >
+    nsc_profile host={{ inventory_hostname }}
+    name=ansible-demo-profile
+    ip={{ ansible_default_ipv4.address }}
+    port=5060
 ~~~
 
 Hopefully a profile should be created. Still rough, still needs to
