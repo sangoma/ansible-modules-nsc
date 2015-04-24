@@ -1,7 +1,9 @@
-#!/usr/bin/python
-
-import safepy
-import requests
+try:
+    import safepy
+    import requests
+    HAS_SAFEPY=True
+except ImportError:
+    HAS_SAFEPY=False
 
 
 def get_network_ip(module, api):
@@ -32,6 +34,9 @@ def main():
             port = dict(required=True)
         )
     )
+
+    if not HAS_SAFEPY:
+        module.fail_json(msg="safepy is not installed")
 
     with get_api(module) as api:
         profile_name = module.params['name']
