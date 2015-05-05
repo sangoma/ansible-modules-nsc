@@ -45,7 +45,7 @@ def main():
         try:
             current_status = bool(current.status())
             current_data = current.retrieve()
-        except requests.HTTPError:
+        except requests.HTTPError as e:
             if e.response.status_code != 404:
                 module.fail_json(msg="falied to query profile")
 
