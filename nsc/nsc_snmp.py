@@ -13,6 +13,7 @@ def main():
         argument_spec = dict(
             host = dict(required=True),
             state = dict(required=True),
+            view = dict(required=True),
         )
     )
 
@@ -28,6 +29,13 @@ def main():
             configuration['assisted'] = 'true'
         elif state == 'stopped':
             configuration['assisted'] = 'false'
+
+        if not api.snmpd.view.list({'oid': module.params['view']}):
+            view_name = module.params['view']
+            view_data = {'access': 'ro',
+                         'oid': view_name,
+                         'type': 'included'}
+            api.snmpd.view.create('ansible_snmp', view_data)
 
     if state == 'started' and status != 'RUNNING':
         service.start()
