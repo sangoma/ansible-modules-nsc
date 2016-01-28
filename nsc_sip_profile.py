@@ -26,8 +26,7 @@ def build_profile(module, api):
 
 
 def diff_dictionaries(d1, d2):
-    overlap = d1.viewkeys() & d2.viewkeys()
-    for key in overlap:
+    for key in d1.viewkeys() & d2.viewkeys():
         if d1[key] != d2[key]:
             return True
     return False
